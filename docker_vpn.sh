@@ -25,6 +25,7 @@ PUID=1024
 LOCAL_NET="192.168.1.0/24"
 TIMEZONE="Australia/Sydney"
 
+TUN_SH="/volume1/public"
 
 
 stop(){
@@ -70,7 +71,7 @@ echo $RES
 if [ -n "$RES" ]; then
 COUNT=$((COUNT + 1))
 else
-echo -e "\033[31m\n Container $i not found \033[0m"
+echo -e "\033[32m\n Container $i not found \033[0m"
 fi
 done
 if [ "$COUNT" -ne "0" ]; then
@@ -88,12 +89,17 @@ echo -e "\033[32m\n creating container ${CONTAINERS[$i]} \033[0m"
 ${CONTAINERS[$i]} ${CONTAINERS[$i]}
 done
 else
-for i in "${CONTAINERS[@]}"
+arraylength=${#CONTAINERS[@]}
+for (( i=0; i<${arraylength}; i++ ));
 do
-echo -e "\033[30m\n Creating $i \033[0m"
-${i} ${i}
+echo -e "\033[32m\n pulling image ${IMAGES[$i]} \033[0m"
+docker pull "${IMAGES[$i]}"
+echo -e "\033[32m\n creating container ${CONTAINERS[$i]} \033[0m"
+${CONTAINERS[$i]} ${CONTAINERS[$i]}
 done
 fi
+
+echo -e "\033[31m\n create complete you may try a start now \033[0m"
 }
 
 
@@ -179,6 +185,12 @@ chown -R $PUID:$PGID $vpn_home
 chmod -R 0755 $vpn_home
 fi
 
+echo -e "\033[31m\n checking TUN script path \033[0m"
+if [ ! -f "$TUN_SH/tun.sh" ]; then
+wget https://raw.githubusercontent.com/monty124/dockerovpn/master/tun.sh -O "$TUN_SH/tun.sh"
+chmod 0744 "$TUN_SH/tun.sh"
+fi
+
 echo -e "\033[31m\n openvpn setup \033[0m"
 
 read -p "Configure for PIA VPN (y/n)? " answer
@@ -191,7 +203,11 @@ case ${answer:0:1} in
     ;;
 esac
 
+echo -e "\033[31m\n preparation complete you may try a create now \033[0m"
 
+echo -e "\033[32m\n remember to create tasks for start and tun.sh in Synology Task Scheduler, tun must run first at boot \033[0m"
+
+echo -e "\033[32m\n it is recommended to also create a restart task daily to ensure the openvpn connection remains connected \033[0m"
 }
 
 PIA(){
@@ -225,8 +241,6 @@ case ${answer:0:1} in
         echo "Please manually configure transmission settings in settings.json in $trans_config after starting container"
     ;;
 esac
-
-
 }
 
 trans_settings(){
