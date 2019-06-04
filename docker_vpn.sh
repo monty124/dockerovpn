@@ -15,7 +15,7 @@ vpn_home="/volume1/docker/openvpn"
 
 sab_config="/volume1/docker/sabnzbd"
 sab_download="/volume1/Downloads"
-sab_incomplete="/volume1/Downloads/incomplete2"
+sab_incomplete="/volume1/Downloads/incomplete"
 
 #run as this user
 PGID=100
