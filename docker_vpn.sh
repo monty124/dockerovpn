@@ -11,6 +11,8 @@ trans_config="/volume1/docker/transmission"
 trans_download="/volume1/Downloads"
 trans_watch="/volume1/Downloads/watch"
 
+container_downloads=""
+
 vpn_home="/volume1/docker/openvpn"
 
 sab_config="/volume1/docker/sabnzbd"
@@ -22,9 +24,8 @@ PGID=100
 PUID=1024
 
 #local subnet and timezone
-LOCAL_NET="192.168.1.0/24"
+LOCAL_NET=""
 TIMEZONE="Australia/Sydney"
-
 TUN_SH="/volume1/public"
 
 
@@ -63,6 +64,10 @@ status(){
 create(){
     clear
     COUNT=0
+	echo -n "Local Subnet? (eg 192.168.1.0/24) [ENTER]: "
+    read LOCAL_NET
+	echo -n "Container Downloads? (eg downloads or Downloads?) [ENTER]: "
+	read container_downloads
     for i in "${CONTAINERS[@]}"
     do
         RES=""
@@ -199,9 +204,18 @@ prepare(){
             PIA
         ;;
         * )
-            echo "Please manually configure vpn files in $vpn_home"
+            read -p "Configure for NORD VPN (y/n)? " answer
+			case ${answer:0:1} in
+				y|Y )
+					NORD
+				;;
+				* )
+			echo "Please manually configure vpn files in $vpn_home"
         ;;
     esac
+        ;;
+    esac
+	
     
     echo -e "\033[31m\n preparation complete you may try a create now \033[0m"
     
@@ -243,6 +257,48 @@ PIA(){
     esac
 }
 
+NORD(){
+    if [ ! -f "$vpn_home/vpn.cert_auth" ]; then
+        echo -n "Enter your NORD username [ENTER]: "
+        read username
+        echo -n "Enter your NORD password [ENTER]: "
+        read -s password
+        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
+    fi
+    cd "$vpn_home"
+	echo -e "\033[31m\n get NORD config files \033[0m"
+	rm -f ./au*.nordvpn.com.tcp.ovpn
+	rm -f ./vpn.conf
+	wget https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O ovpn.zip
+	
+	7z e ovpn.zip au*.nordvpn.com.tcp.ovpn -r
+	
+	ls au*.ovpn
+	
+	echo -n "please choose a server by typing its number, eg for au279.nordvpn.com.tcp.ovpn type 279 [ENTER]: "
+	read servernumber
+	
+	sed 's/auth-user-pass/auth-user-pass vpn.cert_auth/g' au$servernumber.nordvpn.com.tcp.ovpn > vpn.conf
+	
+	rm -f ovpn.zip
+	
+    chown -R $PUID:$PGID $vpn_home
+    chmod -R 0755 $vpn_home
+    chown -R root:root "$vpn_home/vpn.cert_auth"
+    chmod 0600 "$vpn_home/vpn.cert_auth"
+	
+	read -p "Configure transmission settings (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+            trans_settings
+        ;;
+        * )
+            echo "Please manually configure transmission settings in settings.json in $trans_config after starting container"
+        ;;
+    esac
+
+}
+
 trans_settings(){
     echo -e "\033[31m\n get base transmission settings file \033[0m"
     wget https://raw.githubusercontent.com/monty124/dockerovpn/master/settings.json -O "$trans_config/settings.json"
@@ -265,7 +321,7 @@ transmission(){
     docker create \
     --name=$name \
     -v $trans_config:/config \
-    -v $trans_download:/downloads \
+    -v $trans_download:/$container_downloads \
     -v $trans_watch:/watch \
     --restart always \
     -e PGID=$PGID \
@@ -298,7 +354,7 @@ sabnzbd(){
     --name=$name \
     --restart always \
     -v $sab_config:/config \
-    -v $sab_download:/downloads \
+    -v $sab_download:/$container_downloads \
     -v $sab_incomplete:/incomplete-downloads \
     -e PGID=$PGID \
     -e PUID=$PUID \
