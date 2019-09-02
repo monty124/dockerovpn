@@ -18,6 +18,9 @@ vpn_home="/volume1/docker/openvpn"
 sab_config="/volume1/docker/sabnzbd"
 sab_download="/volume1/Downloads"
 sab_incomplete="/volume1/Downloads/incomplete"
+#use this change the host port for sab, this will map through to 8080 internally but use 7979 externally
+#this port conflicts with a lot of other docker apps and is the easiest one to change
+sabport_host="7979"
 
 #run as this user
 PGID=100
@@ -342,7 +345,7 @@ openvpn(){
     --env TZ=$TIMEZONE \
     --env ROUTE=$LOCAL_NET \
     -p 9091:9091 \
-    -p 8080:8080 \
+    -p $sabport_host:8080 \
     -p 9090:9090 \
     --dns 1.1.1.1 \
     dperson/openvpn-client
