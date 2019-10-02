@@ -1,0 +1,54 @@
+---
+version: "2"
+services:
+  openvpn:
+    image: dperson/openvpn-client
+    container_name: openvpn
+    network_mode: bridge
+    cap_add: 
+      - NET_ADMIN
+    devices:
+      - "/dev/net/tun:/dev/net/tun"
+    dns: 1.1.1.1
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=$TIMEZONE
+      - ROUTE=$LOCAL_NET
+    volumes:
+      - $vpn_home:/vpn
+    ports:
+      - 9091:9091
+      - $sabport_host:8080
+      - 9090:9090
+    restart: always
+  transmission:
+    image: linuxserver/transmission
+    container_name: transmission
+    network_mode: "service:openvpn"
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=$TIMEZONE
+    volumes:
+      - $trans_config:/config
+      - $trans_download:/$container_downloads
+      - $trans_watch:/watch
+    restart: always
+    depends_on:
+      - openvpn    
+  sabnzbd:
+    image: linuxserver/sabnzbd
+    container_name: sabnzbd
+    network_mode: "service:openvpn"
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=$TIMEZONE
+    volumes:
+      - $sab_config:/config
+      - $sab_download:/$container_downloads
+      - $sab_incomplete:/incomplete-downloads
+    restart: always
+    depends_on:
+      - openvpn  
