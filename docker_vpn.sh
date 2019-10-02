@@ -1,61 +1,52 @@
 #!/bin/bash
-
-#container names
-#openvpn container first in array! hardcoded array value 0 in network link because CBF handling it
-declare -a CONTAINERS=("openvpn" "transmission" "sabnzbd")
-#container images
-declare -a IMAGES=("dperson/openvpn-client" "linuxserver/transmission" "linuxserver/sabnzbd")
-
-#change these to match your paths
-trans_config="/volume1/docker/transmission"
-trans_download="/volume1/Downloads"
-trans_watch="/volume1/Downloads/watch"
-
-container_downloads=""
-
-vpn_home="/volume1/docker/openvpn"
-
-sab_config="/volume1/docker/sabnzbd"
-sab_download="/volume1/Downloads"
-sab_incomplete="/volume1/Downloads/incomplete"
-#use this change the host port for sab, this will map through to 8080 internally but use 7979 externally
-#this port conflicts with a lot of other docker apps and is the easiest one to change
-sabport_host="7979"
-
-#run as this user
-PGID=100
-PUID=1024
-
-#local subnet and timezone
-LOCAL_NET=""
-TIMEZONE="Australia/Sydney"
-TUN_SH="/volume1/public"
+# Version 2
+# Updated to use docker-compose and .env file
 
 
 stop(){
     clear
-    for i in "${CONTAINERS[@]}"
-    do
-        echo -e "\033[31m\n stopping container $i \033[0m"
-        docker stop "$i" > /dev/null
-        echo -e "\033[32m\n container $i stopped \033[0m"
-    done
+    echo -e "\033[31m\n stopping containers \033[0m"
+    docker-compose -f dockerovpn.yml stop
+    echo -e "\033[32m\n containers stopped \033[0m"
 }
 
 start(){
     clear
-    for i in "${CONTAINERS[@]}"
-    do
-        if docker start "$i" | egrep "($i)" > /dev/null ; then
-            echo -e "\033[32m\n  container $i started  \033[0m"
-        else
-            echo -e "\033[31m\n  container $i start error  \033[0m"
-        fi
-    done
+    echo -e "\033[32m\n  starting containers  \033[0m"
+	docker-compose -f dockerovpn.yml start
+}
+
+update(){
+    clear
+	echo -e "\033[32m\n force updating all containers \033[0m"
+	delete
+	docker-compose -f dockerovpn.yml up --force-recreate -d
+	echo -e "\033[32m\n all containers recreated \033[0m"
+}
+
+updateme(){
+	clear
+	echo -e "\033[32m\n updating THIS script only \033[0m"
+	wget https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn.sh -O "docker_vpn.sh"
+	source .env
+	chown -R $PUID:$PGID "docker_vpn.sh"
+	chmod -R 0755 "docker_vpn.sh"
+	chmod +x "docker_vpn.sh"
+	echo -e "\033[32m\n script updated \033[0m"
+	exit
+}
+
+restart(){
+    clear
+    echo -e "\033[32m\n restarting all containers \033[0m"
+    docker-compose -f dockerovpn.yml restart
+    echo -e "\033[32m\n containers restarted \033[0m"
 }
 
 status(){
     clear
+	#yeah hacky workaround as docker-compose ps is shit
+	CONTAINERS=($(docker-compose -f dockerovpn.yml config --service))
     echo -e "\033[32m\n container $i status \033[0m"
     for i in "${CONTAINERS[@]}"
     do
@@ -66,63 +57,56 @@ status(){
 
 create(){
     clear
-    COUNT=0
-	echo -n "Local Subnet? (eg 192.168.1.0/24) [ENTER]: "
-    read LOCAL_NET
-	echo -n "Container Downloads? (eg downloads or Downloads?) [ENTER]: "
-	read container_downloads
-    for i in "${CONTAINERS[@]}"
-    do
-        RES=""
-        RES=$(docker ps -a --no-trunc  --format "{{.Names}}"  | grep "^${i}$")
-        echo $RES
-        if [ -n "$RES" ]; then
-            COUNT=$((COUNT + 1))
-        else
-            echo -e "\033[32m\n Container $i not found \033[0m"
-        fi
-    done
-    if [ "$COUNT" -ne "0" ]; then
-        clear
-        arraylength=${#CONTAINERS[@]}
-        for (( i=0; i<${arraylength}; i++ ));
-        do
-            echo -e "\033[32m\n stopping container ${CONTAINERS[$i]} \033[0m"
-            docker stop "${CONTAINERS[$i]}" > /dev/null
-            echo -e "\033[31m\n deleting container ${CONTAINERS[$i]} \033[0m"
-            docker rm "${CONTAINERS[$i]}" > /dev/null
-            echo -e "\033[32m\n pulling image ${IMAGES[$i]} \033[0m"
-            docker pull "${IMAGES[$i]}"
-            echo -e "\033[32m\n creating container ${CONTAINERS[$i]} \033[0m"
-            ${CONTAINERS[$i]} ${CONTAINERS[$i]}
-        done
-    else
-        arraylength=${#CONTAINERS[@]}
-        for (( i=0; i<${arraylength}; i++ ));
-        do
-            echo -e "\033[32m\n pulling image ${IMAGES[$i]} \033[0m"
-            docker pull "${IMAGES[$i]}"
-            echo -e "\033[32m\n creating container ${CONTAINERS[$i]} \033[0m"
-            ${CONTAINERS[$i]} ${CONTAINERS[$i]}
-        done
-    fi
+	if [ ! -f ".env" ]; then
+    read -p "use git env settings (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+            git_env_settings
+			
+        ;;
+        * )
+		    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
+            echo "Please manually configure each variable in the .env file first and rerun"
+			exit
+			
+        ;;
+    esac
+	
+	fi
+	echo -e "\033[32m\n .env exists, using existing .env file \033[0m"
+    source .env
     
+	if [ ! -f "./dockerovpn.yml" ]; then
+	echo -e "\033[31m\n downloading compose file from git \033[0m"
+    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/dockerovpn.yml -O "dockerovpn.yml"
+    chown -R $PUID:$PGID "dockerovpn.yml"
+    chmod -R 0755 "dockerovpn.yml"    	
+	fi
+	
+	echo -e "\033[31m\n create containers from compose file \033[0m"
+    
+	docker-compose -f dockerovpn.yml up --no-start
+	
     echo -e "\033[31m\n create complete you may try a start now \033[0m"
-}
-
-
-restart(){
-    clear
-    echo -e "\033[32m\n restarting all containers \033[0m"
-    for i in "${CONTAINERS[@]}"
-    do
-        docker restart "$i" > /dev/null
-    done
-    echo -e "\033[32m\n containers restarted \033[0m"
-}
+	}
 
 prepare(){
     clear
+    read -p "use git env settings (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+            git_env_settings
+	
+        ;;
+        * )
+		    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
+            echo "Please manually configure each variable in the .env file first and rerun"
+			exit
+			
+        ;;
+    esac
+	source .env
+	
     echo -e "\033[32m\n checking paths exist \033[0m"
     echo -e "\033[31m\n checking transmission paths \033[0m"
     
@@ -219,7 +203,11 @@ prepare(){
         ;;
     esac
 	
-    
+	echo -e "\033[31m\n downloading compose file from git \033[0m"
+    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/dockerovpn.yml -O "dockerovpn.yml"
+    chown -R $PUID:$PGID "dockerovpn.yml"
+    chmod -R 0755 "dockerovpn.yml"    	
+	
     echo -e "\033[31m\n preparation complete you may try a create now \033[0m"
     
     echo -e "\033[32m\n remember to create tasks for start and tun.sh in Synology Task Scheduler, tun must run first at boot \033[0m"
@@ -309,61 +297,18 @@ trans_settings(){
     chmod -R 0755 $trans_config
 }
 
+git_env_settings(){
+    echo -e "\033[31m\n get base env file \033[0m"
+    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
+	source ".env"
+    chown -R $PUID:$PGID ".env"
+    chmod -R 0755 ".env"
+}
+
 delete(){
-    for i in "${CONTAINERS[@]}"
-    do
-        echo -e "\033[32m\n stopping container $i \033[0m"
-        docker stop "$i" > /dev/null
-        echo -e "\033[32m\n deleting container $i \033[0m"
-        docker rm "$i" > /dev/null
-    done
-}
-
-transmission(){
-    name=$1
-    docker create \
-    --name=$name \
-    -v $trans_config:/config \
-    -v $trans_download:/$container_downloads \
-    -v $trans_watch:/watch \
-    --restart always \
-    -e PGID=$PGID \
-    -e PUID=$PUID \
-    -e TZ=$TIMEZONE \
-    --net=container:${CONTAINERS[0]} \
-    linuxserver/transmission
-}
-
-openvpn(){
-    name=$1
-    docker create \
-    --cap-add=NET_ADMIN \
-    --device /dev/net/tun \
-    --name $name \
-    --restart always \
-    -v $vpn_home:/vpn \
-    --env TZ=$TIMEZONE \
-    --env ROUTE=$LOCAL_NET \
-    -p 9091:9091 \
-    -p $sabport_host:8080 \
-    -p 9090:9090 \
-    --dns 1.1.1.1 \
-    dperson/openvpn-client
-}
-
-sabnzbd(){
-    name=$1
-    docker create \
-    --name=$name \
-    --restart always \
-    -v $sab_config:/config \
-    -v $sab_download:/$container_downloads \
-    -v $sab_incomplete:/incomplete-downloads \
-    -e PGID=$PGID \
-    -e PUID=$PUID \
-    -e TZ=$TIMEZONE \
-    --net=container:${CONTAINERS[0]} \
-    linuxserver/sabnzbd
+    
+    echo -e "\033[32m\n stopping & deleting containers and images \033[0m"
+    docker-compose -f dockerovpn.yml down --rmi all
 }
 
 case "$1" in
@@ -388,8 +333,13 @@ case "$1" in
     delete)
         delete
     ;;
-    *)
-        echo $"Usage: $0 {start|stop|status|create|restart|prepare|delete}"
+    update)
+        update
+    ;;
+    updateme)
+        updateme
+    ;;    *)
+        echo $"Usage: $0 {start|stop|status|create|restart|prepare|update|updateme|delete}"
         exit 1
 esac
 
