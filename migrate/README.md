@@ -32,7 +32,7 @@ delete your existing docker machine (they are not compatible)
 
 run something like this to re-create
 
-docker-compose -f <yml file> up -d --force-recreate
+docker-compose -f (yml file) up -d --force-recreate
 
 ignore these errors:
 
