@@ -40,12 +40,16 @@ WARNING: Found orphan containers (xxxx) for this project. If you removed or rena
 
 (i'll get to looking at this and finding a work around eventually!) maybe
 
-then when the image is updated run the same command from say a disabled scheduled task!
+then when the image is updated run something like this from say a disabled scheduled task!
+
+docker-compose -f (yml file) pull 
+
+docker-compose -f (yml file) up -d --force-recreate
 
 BINGO!
-
 
 could the script be tidier or more efficient? could the yml compose files be better handled? 
 
 Yeah probably, do a fork then submit a PR if you think you can improve!
 
+more: https://docs.docker.com/compose/reference/overview/
