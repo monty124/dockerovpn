@@ -39,7 +39,8 @@ updateme(){
 restart(){
     clear
     echo -e "\033[32m\n restarting all containers \033[0m"
-    docker-compose -f dockerovpn.yml restart
+    docker-compose -f dockerovpn.yml stop
+	docker-compose -f dockerovpn.yml start
     echo -e "\033[32m\n containers restarted \033[0m"
 }
 
