@@ -228,39 +228,6 @@ prepare(){
     echo -e "\033[32m\n it is recommended to also create a restart task daily to ensure the openvpn connection remains connected \033[0m"
 }
 
-PIA(){
-    if [ ! -f "$vpn_home/vpn.cert_auth" ]; then
-        echo -n "Enter your PIA username [ENTER]: "
-        read username
-        echo -n "Enter your PIA password [ENTER]: "
-        read -s password
-        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
-    fi
-    echo -e "\033[31m\n get openvpn certificate files \033[0m"
-    #https://www.privateinternetaccess.com/helpdesk/kb/articles/which-encryption-auth-settings-should-i-use-for-ports-on-your-gateways-2
-    wget https://www.privateinternetaccess.com/openvpn/crl.rsa.2048.pem -O "$vpn_home/crl.rsa.2048.pem"
-    wget http://www.privateinternetaccess.com/openvpn/ca.rsa.2048.crt -O "$vpn_home/crl.rsa.2048.crt"
-    echo -e "\033[31m\n create config file \033[0m"
-    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/vpn.conf -O "$vpn_home/vpn.conf"
-    chown -R $PUID:$PGID $vpn_home
-    chmod -R 0755 $vpn_home
-    chown -R root:root "$vpn_home/vpn.cert_auth"
-    chmod 0600 "$vpn_home/vpn.cert_auth"
-    
-    echo -e "\033[32m\n docker paths ready \033[0m"
-    
-    
-    read -p "Configure transmission settings (y/n)? " answer
-    case ${answer:0:1} in
-        y|Y )
-            trans_settings
-        ;;
-        * )
-            echo "Please manually configure transmission settings in settings.json in $trans_config after starting container"
-        ;;
-    esac
-}
-
 NORD(){
     if [ ! -f "$vpn_home/vpn.cert_auth" ]; then
         echo -n "Enter your NORD username [ENTER]: "
@@ -318,6 +285,85 @@ delete(){
         echo -e "\033[32m\n deleting container $i \033[0m"
         docker rm "$i" > /dev/null
     done
+}
+
+update(){
+	clear
+	echo -e "\033[32m\n updating THIS script only \033[0m"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v1 -O "docker_vpn.sh"
+	source .env
+	chown -R $PUID:$PGID "docker_vpn.sh"
+	chmod -R 0755 "docker_vpn.sh"
+	chmod +x "docker_vpn.sh"
+	echo -e "\033[32m\n script updated \033[0m"
+	exit
+}
+
+PIA(){
+    if [ ! -f "$vpn_home/vpn.cert_auth" ]; then
+        echo -n "Enter your PIA p*** username [ENTER]: "
+        read username
+        echo -n "Enter your PIA password [ENTER]: "
+        read -s password
+        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
+    fi
+    echo -e "\033[31m\n get openvpn certificate files \033[0m"
+    #https://www.privateinternetaccess.com/helpdesk/kb/articles/which-encryption-auth-settings-should-i-use-for-ports-on-your-gateways-2
+    wget https://www.privateinternetaccess.com/openvpn/crl.rsa.2048.pem -O "$vpn_home/crl.rsa.2048.pem"
+    wget http://www.privateinternetaccess.com/openvpn/ca.rsa.2048.crt -O "$vpn_home/crl.rsa.2048.crt"
+    echo -e "\033[31m\n create config file \033[0m"
+    wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/vpn.conf -O "$vpn_home/vpn.conf"
+    chown -R $PUID:$PGID $vpn_home
+    chmod -R 0755 $vpn_home
+    chown -R root:root "$vpn_home/vpn.cert_auth"
+    chmod 0600 "$vpn_home/vpn.cert_auth"
+    
+    echo -e "\033[32m\n docker paths ready \033[0m"
+    
+    
+    read -p "Configure transmission settings (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+            trans_settings
+        ;;
+        * )
+            echo "Please manually configure transmission settings in settings.json in $trans_config after starting container"
+        ;;
+    esac
+}
+
+piaconf(){
+	clear
+	echo -e "\033[32m\n updating PIA vpn config file and certs \033[0m"
+	stop
+	source .env
+	echo -e "\033[32m\n deleting vpn conf \033[0m"
+	rm -rf "$vpn_home/vpn.conf"
+	echo -e "\033[32m\n deleting pem \033[0m"
+	rm -rf "$vpn_home/crl.rsa.2048.pem"
+	echo -e "\033[32m\n deleting crt \033[0m"
+	rm -rf "$vpn_home/crl.rsa.2048.crt"
+	wget https://raw.githubusercontent.com/monty124/dockerovpn/master/vpn.conf -O "$vpn_home/vpn.conf"
+	wget https://www.privateinternetaccess.com/openvpn/crl.rsa.2048.pem -O "$vpn_home/crl.rsa.2048.pem"
+    wget http://www.privateinternetaccess.com/openvpn/ca.rsa.2048.crt -O "$vpn_home/crl.rsa.2048.crt"
+    chown -R $PUID:$PGID $vpn_home
+	chmod -R 0755 $vpn_home
+	chmod 0600 "$vpn_home/vpn.cert_auth"
+    read -p "rewrite credentials file? (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+		rm -rf "$vpn_home/vpn.cert_auth"
+        echo -n "Enter your PIA p*** username [ENTER]: "
+        read username
+        echo -n "Enter your PIA password [ENTER]: "
+        read -s password
+        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
+		chown -R root:root "$vpn_home/vpn.cert_auth"
+		chmod 0600 "$vpn_home/vpn.cert_auth"
+	;;
+	esac
+	start
+	exit
 }
 
 transmission(){
@@ -388,7 +434,13 @@ case "$1" in
     delete)
         delete
     ;;
+    piaconf)
+        piaconf
+    ;;
+    update)
+        update
+    ;;	
     *)
-        echo $"Usage: $0 {start|stop|status|create|restart|prepare|delete}"
+        echo $"Usage: $0 {start|stop|status|create|restart|prepare|delete|piaconf|update}"
         exit 1
 esac

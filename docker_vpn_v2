@@ -27,7 +27,7 @@ update(){
 updateme(){
 	clear
 	echo -e "\033[32m\n updating THIS script only \033[0m"
-	wget https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn.sh -O "docker_vpn.sh"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v2 -O "docker_vpn.sh"
 	source .env
 	chown -R $PUID:$PGID "docker_vpn.sh"
 	chmod -R 0755 "docker_vpn.sh"
@@ -339,8 +339,11 @@ case "$1" in
     ;;
     updateme)
         updateme
+	;;
+    vpnconf)
+        vpnconf	
     ;;    *)
-        echo $"Usage: $0 {start|stop|status|create|restart|prepare|update|updateme|delete}"
+        echo $"Usage: $0 {start|stop|status|create|restart|prepare|update|updateme|delete|vpnconf}"
         exit 1
 esac
 

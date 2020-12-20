@@ -4,7 +4,10 @@ docker openvpn/sab/transmission shell script for synology
 
 no warranty use at your own risk!
 
-Updated to use docker-create now! (no more typing!)
+note v2 is no longer maintained, there was stupidity with docker-compose and synology
+I recommend using v1 either in syno or standalone
+
+You will need the .env file
 
 Usage: 
 
@@ -38,11 +41,13 @@ deletes containers
 
 update
 
-force updates containers and images
-
-updateme
-
 updates the core script from git!! (yes really)
+
+piaconf
+
+stops, pulls conf file from git to update; updates certs prompts to update creds file, starts
+
+
 
 
 How do I get started?
@@ -67,9 +72,9 @@ chmod +x "docker_vpn.sh"
 
 4. get the .env file and check it!
 
-!! Make sure you check the .env files match your paths and environment (especially local subnet)
-
 wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
+
+!! Make sure you check the .env files match your paths and environment (especially local subnet)
 
 5. run the script with the prepare flag
 
@@ -95,11 +100,21 @@ use the torrent file in my git to confirm vpn is working!
 
 thats all!
 
+
 upgrading from my old script?
 
 delete all your containers
 pull the updated script and .env
 do the needful
+
+urgh PIA changed their servers AGAIN
+you can do a fork & pull request 
+here's a tutorial!
+
+https://github.com/firstcontributions/first-contributions
+
+
+or open an issue 
 
 
 
