@@ -64,7 +64,7 @@ change directories to an appropriate location to store the script,
 
 easiest way is:
 
-wget https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn.sh -O "docker_vpn.sh"
+wget https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v1 -O "docker_vpn.sh"
 
 chmod -R 0755 "docker_vpn.sh"
 
