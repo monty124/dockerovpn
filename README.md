@@ -9,7 +9,9 @@ I recommend using v1 either in syno or standalone
 
 You will need the .env file
 
-Usage: 
+./docker_vpn.sh <command>
+
+Commands: 
 
 start
 
