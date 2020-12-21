@@ -52,9 +52,11 @@ stops, pulls conf file from git to update; updates certs prompts to update creds
 
 How do I get started?
 
-1. ssh to your syno and login (if ssh is not enabled google it)
+1. ssh to your syno ip address as admin and login 
 
-2. sudo to root (docker commands need root) sudo -i (use your admin password)
+https://www.synology.com/en-global/knowledgebase/DSM/tutorial/General_Setup/How_to_login_to_DSM_with_root_permission_via_SSH_Telnet
+
+2. if you have not already, sudo to root (docker commands need root) sudo -i (use your admin password)
 
 change directories to an appropriate location to store the script,
 
