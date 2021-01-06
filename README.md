@@ -128,12 +128,11 @@ add these to your env file
 an update will pull the rest
 
 
+`
 enable_trans=true/false
-
 enable_sab=true/false
-
 othercontainer=true
-
+`
 othercontainerdotfilename=othercontainer
 
 
