@@ -8,7 +8,7 @@ note v2 is no longer maintained, there was stupidity with docker-compose and syn
 I recommend using v1 either in syno or standalone
 
 You will need the .env file
-
+```
 ./docker_vpn.sh <command>
 
 Commands: 
@@ -48,7 +48,7 @@ updates the core script from git!! (yes really)
 piaconf
 
 stops, pulls conf file from git to update; updates certs prompts to update creds file, starts
-
+```
 
 
 
@@ -68,36 +68,39 @@ change directories to an appropriate location to store the script,
 
 easiest way is:
 
+```
 wget https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v1 -O "docker_vpn.sh"
 
 chmod -R 0755 "docker_vpn.sh"
 
 chmod +x "docker_vpn.sh"
-
+```
 4. get the .env file and check it!
-
+```
 wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
-
+```
 !! Make sure you check the .env files match your paths and environment (especially local subnet)
 
 enable or disable services in the .env file
 i.e.
+```
 enable_trans=true/false
 enable_sab=true/false
+```
 enables or disables transmission and or sabnzb
 
 5. run the script with the prepare flag
-
+```
 ./docker_vpn.sh prepare
-
+```
 5. do a create 
-
+```
 ./docker_vpn.sh create
-
+```
 6. do a start
-
+```
 ./docker_vpn.sh start
-
+```
 7. check your services are up
 
 navigate using a browser to 
@@ -106,7 +109,7 @@ http://<synoip>:<sabport> for sab
 
 http://<synoip>:9091/transmission/web/ for transmission
 
-use the torrent file in my git to confirm vpn is working!
+use the torrent file or magnet link in the magnet file in my git to confirm vpn is working!
 
 thats all!
 
@@ -123,9 +126,7 @@ do the needful
 
 .env file changes for v3 commit
 
-add these to your env file
-
-an update will pull the rest
+add these to your env file and an update will pull the rest
 
 
 ```
@@ -153,25 +154,18 @@ Whats this othercontainer thing?
 new feature! 
 see the othercontainer example, you can edit and change where needed or run the example!
 grab the .othercontainer file and give it a go!
- 
-
-
 
 
 Problems?
 
 lsmod issues? try
-
+```
 sudo modprobe ip_tables
-
 sudo echo 'ip_tables' >> /etc/modules
-
 and
-
 sudo modprobe ip6table_filter
-
 or as root
-
+```
 
 no traffic in the qbitorrent container?
 
