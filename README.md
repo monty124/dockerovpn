@@ -113,18 +113,29 @@ thats all!
 
 upgrading from my old script?
 
+
 delete all your containers
+
 pull the updated script and/or update your .env
+
 do the needful
 
+
 .env file changes for v3 commit
+
 add these to your env file
+
 an update will pull the rest
 
+
 enable_trans=true/false
+
 enable_sab=true/false
+
 othercontainer=true
+
 othercontainerdotfilename=othercontainer
+
 
 
 
@@ -150,14 +161,21 @@ grab the .othercontainer file and give it a go!
 Problems?
 
 lsmod issues? try
+
 sudo modprobe ip_tables
+
 sudo echo 'ip_tables' >> /etc/modules
+
 and
+
 sudo modprobe ip6table_filter
+
 or as root
 
+
 no traffic in the qbitorrent container?
-change the settings to bind to the tun device (ipv4)
+
+change the settings to bind to the tun device (all ipv4)
 
 
 
