@@ -27,7 +27,7 @@ status of containers
 
 create
 
-create containers based off compose yml file
+create containers (v2 based off compose yml file)
 
 restart
 
@@ -80,6 +80,12 @@ wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
 
 !! Make sure you check the .env files match your paths and environment (especially local subnet)
 
+enable or disable services in the .env file
+i.e.
+enable_trans=true/false
+enable_sab=true/false
+enables or disables transmission and or sabnzb
+
 5. run the script with the prepare flag
 
 ./docker_vpn.sh prepare
@@ -108,8 +114,19 @@ thats all!
 upgrading from my old script?
 
 delete all your containers
-pull the updated script and .env
+pull the updated script and/or update your .env
 do the needful
+
+.env file changes for v3 commit
+add these to your env file
+an update will pull the rest
+
+enable_trans=true/false
+enable_sab=true/false
+othercontainer=true
+othercontainerdotfilename=othercontainer
+
+
 
 urgh PIA changed their servers AGAIN
 you can do a fork & pull request 
@@ -119,6 +136,29 @@ https://github.com/firstcontributions/first-contributions
 
 
 or open an issue 
+
+Whats this othercontainer thing?
+
+new feature! 
+see the othercontainer example, you can edit and change where needed or run the example!
+grab the .othercontainer file and give it a go!
+ 
+
+
+
+
+Problems?
+
+lsmod issues? try
+sudo modprobe ip_tables
+sudo echo 'ip_tables' >> /etc/modules
+and
+sudo modprobe ip6table_filter
+or as root
+
+no traffic in the qbitorrent container?
+change the settings to bind to the tun device (ipv4)
+
 
 
 

@@ -1,0 +1,42 @@
+#!/bin/bash
+NORD(){
+    if [ ! -f "$vpn_home/vpn.cert_auth" ]; then
+        echo -n "Enter your NORD username [ENTER]: "
+        read username
+        echo -n "Enter your NORD password [ENTER]: "
+        read -s password
+        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
+    fi
+    cd "$vpn_home"
+	echo -e "\033[31m\n get NORD config files \033[0m"
+	rm -f ./au*.nordvpn.com.tcp.ovpn
+	rm -f ./vpn.conf
+	wget https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O ovpn.zip
+	
+	7z e ovpn.zip au*.nordvpn.com.tcp.ovpn -r
+	
+	ls au*.ovpn
+	
+	echo -n "please choose a server by typing its number, eg for au279.nordvpn.com.tcp.ovpn type 279 [ENTER]: "
+	read servernumber
+	
+	sed 's/auth-user-pass/auth-user-pass vpn.cert_auth/g' au$servernumber.nordvpn.com.tcp.ovpn > vpn.conf
+	
+	rm -f ovpn.zip
+	
+    chown -R $PUID:$PGID $vpn_home
+    chmod -R 0755 $vpn_home
+    chown -R root:root "$vpn_home/vpn.cert_auth"
+    chmod 0600 "$vpn_home/vpn.cert_auth"
+	
+	read -p "Configure transmission settings (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+            trans_settings
+        ;;
+        * )
+            echo "Please manually configure transmission settings in settings.json in $trans_config after starting container"
+        ;;
+    esac
+
+}

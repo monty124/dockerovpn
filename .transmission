@@ -1,0 +1,56 @@
+#!/bin/bash
+
+transmission(){
+    name=$1
+    docker create \
+    --name=$name \
+    -v $trans_config:/config \
+    -v $trans_download:/$container_downloads \
+    -v $trans_watch:/watch \
+    --restart always \
+    -e PGID=$PGID \
+    -e PUID=$PUID \
+    -e TZ=$TIMEZONE \
+    --net=container:${CONTAINERS[0]} \
+    linuxserver/transmission
+}
+
+trans_settings(){
+    echo -e "\033[31m\n get base transmission settings file \033[0m"
+    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/settings.json -O "$trans_config/settings.json"
+    chown -R $PUID:$PGID $trans_config
+    chmod -R 0755 $trans_config
+}
+
+
+transprepare(){
+    echo -e "\033[32m\n checking paths exist \033[0m"
+    echo -e "\033[31m\n checking transmission paths \033[0m"
+    
+    if [ -d "$trans_config" ]; then
+        echo -e "\033[32m\n $trans_config path exists \033[0m"
+    else
+        echo -e "\033[32m\n creating $trans_config path \033[0m"
+        mkdir $trans_config
+        chown -R $PUID:$PGID $trans_config
+        chmod -R 0755 $trans_config
+    fi
+    
+    if [ -d "$trans_download" ]; then
+        echo -e "\033[32m\n $trans_download path exists \033[0m"
+    else
+        echo -e "\033[32m\n creating $trans_download path \033[0m"
+        mkdir $trans_download
+        chown -R $PUID:$PGID $trans_download
+        chmod -R 0755 $trans_download
+    fi
+    
+    if [ -d "$trans_watch" ]; then
+        echo -e "\033[32m\n $trans_watch path exists \033[0m"
+    else
+        echo -e "\033[32m\n creating $trans_watch path \033[0m"
+        mkdir $trans_watch
+        chown -R $PUID:$PGID $trans_watch
+        chmod -R 0755 $trans_watch
+    fi
+}

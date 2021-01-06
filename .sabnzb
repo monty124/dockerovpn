@@ -1,0 +1,47 @@
+#!/bin/bash
+sabnzbd(){
+    name=$1
+    docker create \
+    --name=$name \
+    --restart always \
+    -v $sab_config:/config \
+    -v $sab_download:/$container_downloads \
+    -v $sab_incomplete:/incomplete-downloads \
+    -e PGID=$PGID \
+    -e PUID=$PUID \
+    -e TZ=$TIMEZONE \
+    --net=container:${CONTAINERS[0]} \
+    linuxserver/sabnzbd
+}
+
+
+sabprepare(){
+	echo -e "\033[31m\n checking sabnzb paths \033[0m"
+    
+    if [ -d "$sab_config" ]; then
+        echo -e "\033[32m\n $sab_config path exists \033[0m"
+    else
+        echo -e "\033[32m\n creating $sab_config path \033[0m"
+        mkdir $sab_config
+        chown -R $PUID:$PGID $sab_config
+        chmod -R 0755 $sab_config
+    fi
+    
+    if [ -d "$sab_download" ]; then
+        echo -e "\033[32m\n $sab_download path exists \033[0m"
+    else
+        echo -e "\033[32m\n creating $sab_download path \033[0m"
+        mkdir $sab_download
+        chown -R $PUID:$PGID $sab_download
+        chmod -R 0755 $sab_download
+    fi
+    
+    if [ -d "$sab_incomplete" ]; then
+        echo -e "\033[32m\n $sab_incomplete path exists \033[0m"
+    else
+        echo -e "\033[32m\n creating $sab_incomplete path \033[0m"
+        mkdir $sab_incomplete
+        chown -R $PUID:$PGID $sab_incomplete
+        chmod -R 0755 $sab_incomplete
+    fi
+}

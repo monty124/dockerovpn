@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#container names
-#openvpn container first in array! hardcoded array value 0 in network link because CBF handling it
-declare -a CONTAINERS=("openvpn" "transmission" "sabnzbd")
-#container images
-declare -a IMAGES=("dperson/openvpn-client" "linuxserver/transmission" "linuxserver/sabnzbd")
+#openvpn container first in array! hardcoded array value 0 in network link because CBF handling it  
+declare -a CONTAINERS=("openvpn")
+#container images   
+declare -a IMAGES=("dperson/openvpn-client")
+#portmaps
+PORTS=""
 
 git_env_settings(){
     echo -e "\033[31m\n get base env file \033[0m"
@@ -32,6 +33,28 @@ esac
 fi
 
 source .env
+source .transmission
+source .sabnzb
+
+
+if [ $enable_trans == "true" ]; then
+	CONTAINERS+=("transmission")
+	IMAGES+=("linuxserver/transmission")
+	PORTS="${PORTS} -p 9091:9091"
+fi
+
+if [ $enable_sab == "true" ]; then
+	CONTAINERS+=("sabnzbd")
+	IMAGES+=("linuxserver/sabnzbd")
+	PORTS="${PORTS} -p $sabport_host:8080"
+fi
+
+if [ $othercontainer == "true" ]; then
+	source ."${othercontainerdotfilename}"
+	CONTAINERS+=("${containername}")
+	IMAGES+=("${imagename}")
+	PORTS="${PORTS} ${portmapping}"
+fi
 
 stop(){
     clear
@@ -107,7 +130,6 @@ create(){
     echo -e "\033[31m\n create complete you may try a start now \033[0m"
 }
 
-
 restart(){
     clear
     echo -e "\033[32m\n restarting all containers \033[0m"
@@ -120,65 +142,15 @@ restart(){
 
 prepare(){
     clear
-    echo -e "\033[32m\n checking paths exist \033[0m"
-    echo -e "\033[31m\n checking transmission paths \033[0m"
-    
-    if [ -d "$trans_config" ]; then
-        echo -e "\033[32m\n $trans_config path exists \033[0m"
-    else
-        echo -e "\033[32m\n creating $trans_config path \033[0m"
-        mkdir $trans_config
-        chown -R $PUID:$PGID $trans_config
-        chmod -R 0755 $trans_config
+	source .env
+	if [ $enable_trans == "true" ]; then
+		transprepare
     fi
     
-    if [ -d "$trans_download" ]; then
-        echo -e "\033[32m\n $trans_download path exists \033[0m"
-    else
-        echo -e "\033[32m\n creating $trans_download path \033[0m"
-        mkdir $trans_download
-        chown -R $PUID:$PGID $trans_download
-        chmod -R 0755 $trans_download
-    fi
-    
-    if [ -d "$trans_watch" ]; then
-        echo -e "\033[32m\n $trans_watch path exists \033[0m"
-    else
-        echo -e "\033[32m\n creating $trans_watch path \033[0m"
-        mkdir $trans_watch
-        chown -R $PUID:$PGID $trans_watch
-        chmod -R 0755 $trans_watch
-    fi
-    
-    echo -e "\033[31m\n checking sabnzb paths \033[0m"
-    
-    if [ -d "$sab_config" ]; then
-        echo -e "\033[32m\n $sab_config path exists \033[0m"
-    else
-        echo -e "\033[32m\n creating $sab_config path \033[0m"
-        mkdir $sab_config
-        chown -R $PUID:$PGID $sab_config
-        chmod -R 0755 $sab_config
-    fi
-    
-    if [ -d "$sab_download" ]; then
-        echo -e "\033[32m\n $sab_download path exists \033[0m"
-    else
-        echo -e "\033[32m\n creating $sab_download path \033[0m"
-        mkdir $sab_download
-        chown -R $PUID:$PGID $sab_download
-        chmod -R 0755 $sab_download
-    fi
-    
-    if [ -d "$sab_incomplete" ]; then
-        echo -e "\033[32m\n $sab_incomplete path exists \033[0m"
-    else
-        echo -e "\033[32m\n creating $sab_incomplete path \033[0m"
-        mkdir $sab_incomplete
-        chown -R $PUID:$PGID $sab_incomplete
-        chmod -R 0755 $sab_incomplete
-    fi
-    
+	if [ $enable_sab == "true" ]; then
+		sabprepare
+    fi 
+	
     echo -e "\033[31m\n checking openvpn path \033[0m"
     
     if [ -d "$vpn_home" ]; then
@@ -211,6 +183,7 @@ prepare(){
             read -p "Configure for NORD VPN (y/n)? " answer
 			case ${answer:0:1} in
 				y|Y )
+					source .nord
 					NORD
 				;;
 				* )
@@ -228,55 +201,6 @@ prepare(){
     echo -e "\033[32m\n it is recommended to also create a restart task daily to ensure the openvpn connection remains connected \033[0m"
 }
 
-NORD(){
-    if [ ! -f "$vpn_home/vpn.cert_auth" ]; then
-        echo -n "Enter your NORD username [ENTER]: "
-        read username
-        echo -n "Enter your NORD password [ENTER]: "
-        read -s password
-        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
-    fi
-    cd "$vpn_home"
-	echo -e "\033[31m\n get NORD config files \033[0m"
-	rm -f ./au*.nordvpn.com.tcp.ovpn
-	rm -f ./vpn.conf
-	wget https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O ovpn.zip
-	
-	7z e ovpn.zip au*.nordvpn.com.tcp.ovpn -r
-	
-	ls au*.ovpn
-	
-	echo -n "please choose a server by typing its number, eg for au279.nordvpn.com.tcp.ovpn type 279 [ENTER]: "
-	read servernumber
-	
-	sed 's/auth-user-pass/auth-user-pass vpn.cert_auth/g' au$servernumber.nordvpn.com.tcp.ovpn > vpn.conf
-	
-	rm -f ovpn.zip
-	
-    chown -R $PUID:$PGID $vpn_home
-    chmod -R 0755 $vpn_home
-    chown -R root:root "$vpn_home/vpn.cert_auth"
-    chmod 0600 "$vpn_home/vpn.cert_auth"
-	
-	read -p "Configure transmission settings (y/n)? " answer
-    case ${answer:0:1} in
-        y|Y )
-            trans_settings
-        ;;
-        * )
-            echo "Please manually configure transmission settings in settings.json in $trans_config after starting container"
-        ;;
-    esac
-
-}
-
-trans_settings(){
-    echo -e "\033[31m\n get base transmission settings file \033[0m"
-    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/settings.json -O "$trans_config/settings.json"
-    chown -R $PUID:$PGID $trans_config
-    chmod -R 0755 $trans_config
-}
-
 delete(){
     for i in "${CONTAINERS[@]}"
     do
@@ -289,11 +213,20 @@ delete(){
 
 update(){
 	clear
-	echo -e "\033[32m\n updating THIS script only \033[0m"
+	echo -e "\033[32m\n updating THIS script and all dependancies only .env is untouched \033[0m"
 	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v1 -O "docker_vpn.sh"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.transmission -O ".transmission"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.sabnzb -O ".sabnzb"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.nord -O ".nord"
 	source .env
 	chown -R $PUID:$PGID "docker_vpn.sh"
 	chmod -R 0755 "docker_vpn.sh"
+	chown -R $PUID:$PGID ".transmission"
+	chmod -R 0755 ".transmission"
+	chown -R $PUID:$PGID ".sabnzb"
+	chmod -R 0755 ".sabnzb"
+	chown -R $PUID:$PGID ".nord"
+	chmod -R 0755 ".nord"
 	chmod +x "docker_vpn.sh"
 	echo -e "\033[32m\n script updated \033[0m"
 	exit
@@ -366,23 +299,22 @@ piaconf(){
 	exit
 }
 
-transmission(){
-    name=$1
-    docker create \
-    --name=$name \
-    -v $trans_config:/config \
-    -v $trans_download:/$container_downloads \
-    -v $trans_watch:/watch \
-    --restart always \
-    -e PGID=$PGID \
-    -e PUID=$PUID \
-    -e TZ=$TIMEZONE \
-    --net=container:${CONTAINERS[0]} \
-    linuxserver/transmission
-}
-
 openvpn(){
     name=$1
+	echo "ports exposed ${PORTS}"
+	if [ -z "$PORTS" ]; then
+	docker create \
+    --cap-add=NET_ADMIN \
+    --device /dev/net/tun \
+    --name $name \
+    --restart always \
+    -v $vpn_home:/vpn \
+    --env TZ=$TIMEZONE \
+    --env ROUTE=$LOCAL_NET \
+    --dns 8.8.4.4 \
+	--sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    dperson/openvpn-client
+	else
     docker create \
     --cap-add=NET_ADMIN \
     --device /dev/net/tun \
@@ -391,27 +323,14 @@ openvpn(){
     -v $vpn_home:/vpn \
     --env TZ=$TIMEZONE \
     --env ROUTE=$LOCAL_NET \
-    -p 9091:9091 \
-    -p $sabport_host:8080 \
+	$PORTS \
     --dns 8.8.4.4 \
 	--sysctl net.ipv6.conf.all.disable_ipv6=0 \
-    dperson/openvpn-client
+	dperson/openvpn-client
+	fi
 }
 
-sabnzbd(){
-    name=$1
-    docker create \
-    --name=$name \
-    --restart always \
-    -v $sab_config:/config \
-    -v $sab_download:/$container_downloads \
-    -v $sab_incomplete:/incomplete-downloads \
-    -e PGID=$PGID \
-    -e PUID=$PUID \
-    -e TZ=$TIMEZONE \
-    --net=container:${CONTAINERS[0]} \
-    linuxserver/sabnzbd
-}
+
 
 case "$1" in
     start)

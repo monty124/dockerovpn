@@ -1,0 +1,35 @@
+#!/bin/bash
+#container name
+containername=qbittorrent
+#container image
+imagename=linuxserver/qbittorrent
+#portmapping on a single line e.g. -p 6881:6881 -p 6881:6881/udp -p 8181:8181 
+portmapping="-p 8181:8181"
+
+#external container path, internal is in .env
+download_path="/home/docker/volume1/Downloads"
+#external config path
+config_path="/home/docker/volume1/docker/qbittorrent"
+#variable for webui used below COULD be hard coded, needs to map to the portmapping above for this container
+webuiport=8181
+
+#function needs to be the container name do not change the code name=$1 this needs to be included
+#you need to prepare your own paths for this container!! make sure permissions are correct!
+#do not expose ports below! its done in the openvpn container and the portmapping above
+#most of below will be transportable to other container types! 
+#--net=container:${CONTAINERS[0]} \
+
+qbittorrent(){
+	name=$1
+    docker create \
+    --name=$name \
+    --restart always \
+	-e WEBUI_PORT=$webuiport \
+    -e PGID=$PGID \
+    -e PUID=$PUID \
+    -e TZ=$TIMEZONE \
+	-v $download_path:/$container_downloads \
+	-v $config_path:/config \
+    --net=container:openvpn \
+    $imagename
+}
