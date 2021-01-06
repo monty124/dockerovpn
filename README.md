@@ -151,8 +151,10 @@ or open an issue
 
 Whats this othercontainer thing?
 
-new feature! 
+new feature!
+ 
 see the othercontainer example, you can edit and change where needed or run the example!
+
 grab the .othercontainer file and give it a go!
 
 
