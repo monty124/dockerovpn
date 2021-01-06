@@ -104,11 +104,11 @@ enables or disables transmission and or sabnzb
 7. check your services are up
 
 navigate using a browser to 
-
+```
 http://<synoip>:<sabport> for sab
 
 http://<synoip>:9091/transmission/web/ for transmission
-
+```
 use the torrent file or magnet link in the magnet file in my git to confirm vpn is working!
 
 thats all!
