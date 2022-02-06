@@ -1,0 +1,372 @@
+#!/bin/bash
+
+#openvpn container first in array! hardcoded array value 0 in network link because CBF handling it  
+declare -a CONTAINERS=("openvpn")
+#container images   
+declare -a IMAGES=("dperson/openvpn-client")
+#portmaps
+PORTS=""
+
+git_env_settings(){
+    echo -e "\033[31m\n get base env file \033[0m"
+    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
+	source ".env"
+    chown -R $PUID:$PGID ".env"
+    chmod -R 0755 ".env"
+}
+
+if [ ! -f "./.env" ]; then 
+clear
+read -p "pull fresh env settings from git and use them now (y) or pull and change the settings first (n)? " answer
+case ${answer:0:1} in
+    y|Y )
+        git_env_settings
+    ;;
+    * )
+	
+	    wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
+        echo "Please manually configure each variable in the .env file first and rerun"
+		exit
+	source .env
+    ;;
+esac
+fi
+
+source .env
+source .transmission
+source .sabnzb
+
+
+if [ $enable_trans == "true" ]; then
+	CONTAINERS+=("transmission")
+	IMAGES+=("linuxserver/transmission")
+	PORTS="${PORTS} -p 9091:9091"
+fi
+
+if [ $enable_sab == "true" ]; then
+	CONTAINERS+=("sabnzbd")
+	IMAGES+=("linuxserver/sabnzbd")
+	PORTS="${PORTS} -p $sabport_host:8080"
+fi
+
+if [ $othercontainer == "true" ]; then
+	source ."${othercontainerdotfilename}"
+	CONTAINERS+=("${containername}")
+	IMAGES+=("${imagename}")
+	PORTS="${PORTS} ${portmapping}"
+fi
+
+stop(){
+    clear
+    for i in "${CONTAINERS[@]}"
+    do
+        echo -e "\033[31m\n stopping container $i \033[0m"
+        docker stop "$i" > /dev/null
+        echo -e "\033[32m\n container $i stopped \033[0m"
+    done
+}
+
+start(){
+    clear
+    for i in "${CONTAINERS[@]}"
+    do
+        if docker start "$i" | egrep "($i)" > /dev/null ; then
+            echo -e "\033[32m\n  container $i started  \033[0m"
+        else
+            echo -e "\033[31m\n  container $i start error  \033[0m"
+        fi
+    done
+}
+
+status(){
+    clear
+    echo -e "\033[32m\n container $i status \033[0m"
+    for i in "${CONTAINERS[@]}"
+    do
+        docker container ls -f name=${i} --format='container {{.ID}} with name: {{.Names}} has been {{.Status}}'
+    done
+    echo -e "\n"
+}
+
+create(){
+    clear
+    COUNT=0
+	for i in "${CONTAINERS[@]}"
+    do
+        RES=""
+        RES=$(docker ps -a --no-trunc  --format "{{.Names}}"  | grep "^${i}$")
+        echo $RES
+        if [ -n "$RES" ]; then
+            COUNT=$((COUNT + 1))
+        else
+            echo -e "\033[32m\n Container $i not found \033[0m"
+        fi
+    done
+    if [ "$COUNT" -ne "0" ]; then
+        clear
+        arraylength=${#CONTAINERS[@]}
+        for (( i=0; i<${arraylength}; i++ ));
+        do
+            echo -e "\033[32m\n stopping container ${CONTAINERS[$i]} \033[0m"
+            docker stop "${CONTAINERS[$i]}" > /dev/null
+            echo -e "\033[31m\n deleting container ${CONTAINERS[$i]} \033[0m"
+            docker rm "${CONTAINERS[$i]}" > /dev/null
+            echo -e "\033[32m\n pulling image ${IMAGES[$i]} \033[0m"
+            docker pull "${IMAGES[$i]}"
+            echo -e "\033[32m\n creating container ${CONTAINERS[$i]} \033[0m"
+            ${CONTAINERS[$i]} ${CONTAINERS[$i]}
+        done
+    else
+        arraylength=${#CONTAINERS[@]}
+        for (( i=0; i<${arraylength}; i++ ));
+        do
+            echo -e "\033[32m\n pulling image ${IMAGES[$i]} \033[0m"
+            docker pull "${IMAGES[$i]}"
+            echo -e "\033[32m\n creating container ${CONTAINERS[$i]} \033[0m"
+            ${CONTAINERS[$i]} ${CONTAINERS[$i]}
+        done
+    fi
+    
+    echo -e "\033[31m\n create complete you may try a start now \033[0m"
+}
+
+restart(){
+    clear
+    echo -e "\033[32m\n restarting all containers \033[0m"
+    for i in "${CONTAINERS[@]}"
+    do
+        docker restart "$i" > /dev/null
+    done
+    echo -e "\033[32m\n containers restarted \033[0m"
+}
+
+prepare(){
+    clear
+	source .env
+	if [ $enable_trans == "true" ]; then
+		transprepare
+    fi
+    
+	if [ $enable_sab == "true" ]; then
+		sabprepare
+    fi 
+	
+    echo -e "\033[31m\n checking openvpn path \033[0m"
+    
+    if [ -d "$vpn_home" ]; then
+        echo -e "\033[32m\n $vpn_home path exists \033[0m"
+    else
+        echo -e "\033[32m\n creating $vpn_home path \033[0m"
+        mkdir $vpn_home
+        chown -R $PUID:$PGID $vpn_home
+        chmod -R 0755 $vpn_home
+    fi
+    
+    echo -e "\033[31m\n checking TUN script path \033[0m"
+	if [ ! -c "/dev/net/tun" ]; then 
+    if [ ! -f "$TUN_SH/tun.sh" ]; then
+        wget https://raw.githubusercontent.com/monty124/dockerovpn/master/tun.sh -O "$TUN_SH/tun.sh"
+        chmod 0744 "$TUN_SH/tun.sh"
+    fi
+    else
+		echo -e "\033[32m\n tun device exists \033[0m"
+	fi
+	
+    echo -e "\033[31m\n openvpn setup \033[0m"
+    
+    read -p "Configure for PIA VPN (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+            PIA
+        ;;
+        * )
+            read -p "Configure for NORD VPN (y/n)? " answer
+			case ${answer:0:1} in
+				y|Y )
+					source .nord
+					NORD
+				;;
+				* )
+			echo "Please manually configure vpn files in $vpn_home"
+        ;;
+    esac
+        ;;
+    esac
+	
+    
+    echo -e "\033[31m\n preparation complete you may try a create now \033[0m"
+    
+    echo -e "\033[32m\n remember to create tasks for start and tun.sh in Synology Task Scheduler, tun must run first at boot \033[0m"
+    
+    echo -e "\033[32m\n it is recommended to also create a restart task daily to ensure the openvpn connection remains connected \033[0m"
+}
+
+delete(){
+    for i in "${CONTAINERS[@]}"
+    do
+        echo -e "\033[32m\n stopping container $i \033[0m"
+        docker stop "$i" > /dev/null
+        echo -e "\033[32m\n deleting container $i \033[0m"
+        docker rm "$i" > /dev/null
+    done
+}
+
+update(){
+	clear
+	echo -e "\033[32m\n updating THIS script and all dependancies only .env is untouched \033[0m"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v1 -O "docker_vpn.sh"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.transmission -O ".transmission"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.sabnzb -O ".sabnzb"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.nord -O ".nord"
+	source .env
+	chown -R $PUID:$PGID "docker_vpn.sh"
+	chmod -R 0755 "docker_vpn.sh"
+	chown -R $PUID:$PGID ".transmission"
+	chmod -R 0755 ".transmission"
+	chown -R $PUID:$PGID ".sabnzb"
+	chmod -R 0755 ".sabnzb"
+	chown -R $PUID:$PGID ".nord"
+	chmod -R 0755 ".nord"
+	chmod +x "docker_vpn.sh"
+	echo -e "\033[32m\n script updated \033[0m"
+	exit
+}
+
+PIA(){
+    if [ ! -f "$vpn_home/vpn.cert_auth" ]; then
+        echo -n "Enter your PIA p*** username [ENTER]: "
+        read username
+        echo -n "Enter your PIA password [ENTER]: "
+        read -s password
+        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
+    fi
+    echo -e "\033[31m\n get openvpn certificate files \033[0m"
+    #https://www.privateinternetaccess.com/helpdesk/kb/articles/which-encryption-auth-settings-should-i-use-for-ports-on-your-gateways-2
+    wget https://www.privateinternetaccess.com/openvpn/crl.rsa.2048.pem -O "$vpn_home/crl.rsa.2048.pem"
+    wget http://www.privateinternetaccess.com/openvpn/ca.rsa.2048.crt -O "$vpn_home/crl.rsa.2048.crt"
+    echo -e "\033[31m\n create config file \033[0m"
+    wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/vpn.conf -O "$vpn_home/vpn.conf"
+    chown -R $PUID:$PGID $vpn_home
+    chmod -R 0755 $vpn_home
+    chown -R root:root "$vpn_home/vpn.cert_auth"
+    chmod 0600 "$vpn_home/vpn.cert_auth"
+    
+    echo -e "\033[32m\n docker paths ready \033[0m"
+    
+    
+    read -p "Configure transmission settings (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+            trans_settings
+        ;;
+        * )
+            echo "Please manually configure transmission settings in settings.json in $trans_config after starting container"
+        ;;
+    esac
+}
+
+piaconf(){
+	clear
+	echo -e "\033[32m\n updating PIA vpn config file and certs \033[0m"
+	stop
+	source .env
+	echo -e "\033[32m\n deleting vpn conf \033[0m"
+	rm -rf "$vpn_home/vpn.conf"
+	echo -e "\033[32m\n deleting pem \033[0m"
+	rm -rf "$vpn_home/crl.rsa.2048.pem"
+	echo -e "\033[32m\n deleting crt \033[0m"
+	rm -rf "$vpn_home/crl.rsa.2048.crt"
+	wget https://raw.githubusercontent.com/monty124/dockerovpn/master/vpn.conf -O "$vpn_home/vpn.conf"
+	wget https://www.privateinternetaccess.com/openvpn/crl.rsa.2048.pem -O "$vpn_home/crl.rsa.2048.pem"
+    wget http://www.privateinternetaccess.com/openvpn/ca.rsa.2048.crt -O "$vpn_home/crl.rsa.2048.crt"
+    chown -R $PUID:$PGID $vpn_home
+	chmod -R 0755 $vpn_home
+	chmod 0600 "$vpn_home/vpn.cert_auth"
+    read -p "rewrite credentials file? (y/n)? " answer
+    case ${answer:0:1} in
+        y|Y )
+		rm -rf "$vpn_home/vpn.cert_auth"
+        echo -n "Enter your PIA p*** username [ENTER]: "
+        read username
+        echo -n "Enter your PIA password [ENTER]: "
+        read -s password
+        echo -e "$username\n$password" >> "$vpn_home/vpn.cert_auth"
+		chown -R root:root "$vpn_home/vpn.cert_auth"
+		chmod 0600 "$vpn_home/vpn.cert_auth"
+	;;
+	esac
+	start
+	exit
+}
+
+openvpn(){
+    name=$1
+	echo "ports exposed ${PORTS}"
+	if [ -z "$PORTS" ]; then
+	docker create \
+    --cap-add=NET_ADMIN \
+    --device /dev/net/tun \
+    --name $name \
+    --restart always \
+    -v $vpn_home:/vpn \
+    --env TZ=$TIMEZONE \
+    --env ROUTE=$LOCAL_NET \
+    --dns 8.8.4.4 \
+	--env VPNPORT='51413;tcp' \
+	--env VPNPORT_2='51413;udp' \
+	--env FIREWALL="" \
+	--sysctl net.ipv6.conf.all.disable_ipv6=1 \
+    dperson/openvpn-client
+	else
+    docker create \
+    --cap-add=NET_ADMIN \
+    --device /dev/net/tun \
+    --name $name \
+    --restart always \
+    -v $vpn_home:/vpn \
+    --env TZ=$TIMEZONE \
+    --env ROUTE=$LOCAL_NET \
+	$PORTS \
+    --dns 8.8.4.4 \
+	--env FIREWALL="" \
+	--env VPNPORT='51413;tcp' \
+	--env VPNPORT_2='51413;udp' \
+	--sysctl net.ipv6.conf.all.disable_ipv6=1 \
+	dperson/openvpn-client
+	fi
+}
+
+
+
+case "$1" in
+    start)
+        start
+    ;;
+    stop)
+        stop
+    ;;
+    status)
+        status
+    ;;
+    create)
+        create
+    ;;
+    restart)
+        restart
+    ;;
+    prepare)
+        prepare
+    ;;
+    delete)
+        delete
+    ;;
+    piaconf)
+        piaconf
+    ;;
+    update)
+        update
+    ;;	
+    *)
+        echo $"Usage: $0 {start|stop|status|create|restart|prepare|delete|piaconf|update}"
+        exit 1
+esac

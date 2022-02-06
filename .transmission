@@ -12,7 +12,7 @@ transmission(){
     -e PUID=$PUID \
     -e TZ=$TIMEZONE \
     --net=container:${CONTAINERS[0]} \
-    linuxserver/transmission
+    lscr.io/linuxserver/transmission
 }
 
 trans_settings(){
