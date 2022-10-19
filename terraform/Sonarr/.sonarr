@@ -1,0 +1,3 @@
+sonarr_host_config=/volume1/docker/sonarr
+sonarr_host_media=/volume1/TV
+sonarr_container_media=/tv
