@@ -7,7 +7,8 @@ no warranty use at your own risk!
 note v2 is no longer maintained, there was stupidity with docker-compose and synology
 I recommend using v1 either in syno or standalone
 
-You will need the .env file
+You will need the .env file and you will need to alter its parameters to suit
+
 ```
 ./docker_vpn.sh <command>
 
@@ -52,7 +53,7 @@ stops, pulls conf file from git to update; updates certs prompts to update creds
 
 
 
-How do I get started?
+## How do I get started?
 
 1. ssh to your syno ip address as admin and login 
 
@@ -114,7 +115,7 @@ use the torrent file or magnet link in the magnet file in my git to confirm vpn 
 thats all!
 
 
-upgrading from my old script?
+## upgrading from my old script?
 
 
 delete all your containers
@@ -124,7 +125,57 @@ pull the updated script and/or update your .env
 do the needful
 
 
-.env file changes for v3 commit
+## Terraform
+
+Yes there's now some terraform code to deploy complementary services
+
+````
+EnableRemoteDocker
+This code Enables remote docker connectivity on Synology devices but the code could be adapted to standalone boxes, ymmv.
+
+Radarr
+https://github.com/linuxserver/docker-radarr
+
+Sonarr
+https://github.com/linuxserver/docker-sonarr
+
+````
+
+## How do I use this?
+
+### Install Terraform
+
+The easiest way is to use winget
+
+```
+    winget install terraform
+```
+I also recommend Powershell 7 and Windows Terminal
+
+### Run the Code
+
+- From within the code folder
+- setup terraform
+```
+    terraform init
+```
+- plan your deployment and answer any questions  eg:
+```
+    terraform plan -out=sonarr
+```
+- review the plan
+- Apply the config eg:
+```
+    terraform apply ".\sonarr"
+    
+```
+- review and make sure it worked!
+- log on to your web portals using the default ports
+
+
+# Changes
+
+## .env file changes for v2 to v3 commit
 
 add these to your env file and an update will pull the rest
 
@@ -136,20 +187,15 @@ othercontainer=true
 othercontainerdotfilename=othercontainer
 ```
 
-
-
-
-
-urgh PIA changed their servers AGAIN
+## urgh PIA changed their servers AGAIN
 you can do a fork & pull request 
 here's a tutorial!
 
 https://github.com/firstcontributions/first-contributions
 
-
 or open an issue 
 
-Whats this othercontainer thing?
+## Whats this othercontainer thing?
 
 new feature!
  
@@ -158,9 +204,9 @@ see the othercontainer example, you can edit and change where needed or run the 
 grab the .othercontainer file and give it a go!
 
 
-Problems?
+# Problems?
 
-lsmod issues? try
+## lsmod issues? try
 ```
 sudo modprobe ip_tables
 sudo echo 'ip_tables' >> /etc/modules
@@ -169,7 +215,7 @@ sudo modprobe ip6table_filter
 or as root
 ```
 
-no traffic in the qbitorrent container?
+## no traffic in the qbitorrent container?
 
 change the settings to bind to the tun device (all ipv4)
 
