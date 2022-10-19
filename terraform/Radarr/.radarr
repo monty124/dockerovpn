@@ -1,0 +1,3 @@
+radarr_host_config=/volume1/docker/radarr
+radarr_host_media=/volume1/MOVIES
+radarr_container_media=/movies
