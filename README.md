@@ -81,6 +81,7 @@ chmod +x "docker_vpn.sh"
 wget https://raw.githubusercontent.com/monty124/dockerovpn/master/.env -O ".env"
 ```
 !! Make sure you check the .env files match your paths and environment (especially local subnet)
+also take note on the transmission download path (trans_download) it is also used in the terraform code (if you're using it!)
 
 enable or disable services in the .env file
 i.e.
@@ -155,11 +156,12 @@ I also recommend Powershell 7 and Windows Terminal
 ### Run the Code
 
 - From within the code folder
+- edit the .sonarr or .radarr file to ensure it is relavent to your local network
 - setup terraform
 ```
     terraform init
 ```
-- plan your deployment and answer any questions  eg:
+- plan your deployment and answer any questions eg:
 ```
     terraform plan -out=sonarr
 ```
@@ -172,6 +174,9 @@ I also recommend Powershell 7 and Windows Terminal
 - review and make sure it worked!
 - log on to your web portals using the default ports
 
+## Notes
+
+The terraform code uses values from the .env file as well as its own dot env files, I also assume you are using transmission and it will use the transmission download folder; so even if you are not using transmission make sure this variable is set correct in your .env file 
 
 # Changes
 

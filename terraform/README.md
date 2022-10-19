@@ -29,11 +29,12 @@ I also recommend Powershell 7 and Windows Terminal
 ### Run the Code
 
 - From within the code folder
+- edit the .sonarr or .radarr file to ensure it is relavent to your local network
 - setup terraform
 ```
     terraform init
 ```
-- plan your deployment and answer any questions  eg:
+- plan your deployment and answer any questions eg:
 ```
     terraform plan -out=sonarr
 ```
@@ -46,4 +47,6 @@ I also recommend Powershell 7 and Windows Terminal
 - review and make sure it worked!
 - log on to your web portals using the default ports
 
+## Notes
 
+The terraform code uses values from the .env file as well as its own dot env files, I also assume you are using transmission and it will use the transmission download folder; so even if you are not using transmission make sure this variable is set correct in your .env file 
