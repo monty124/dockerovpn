@@ -157,6 +157,46 @@ see the othercontainer example, you can edit and change where needed or run the 
 
 grab the .othercontainer file and give it a go!
 
+&nbsp;
+
+## failover?
+
+Yeah..... new feature!!!
+
+Why??
+
+Well if you have a failover service to 4G for example, you may not want to download a metric shit ton over it if your main connection fails for an extended time, so this is an attempt to avoid that; we could do something with like static routes and shit but hey just kill the containers its easy
+
+REQUIRES!
+
+- A DNS 'A' record set to your usual IP Address, note, DDNS records may update in between the script running so this needs to be clunky! if your DHCP IP changes (your containers will stop on the main service) manually update the record, set a low ttl wait for settings to propagate and rerun the script!
+
+    Also if you're using cloudflare make sure the A record is not proxied; a lookup needs to return your actual IP
+
+- A scheduled task on the syno to run this like every 5 mins, every minute is freaking overkill; we're just trying to avoid or minimise things here 
+
+- pull the new script (see update flag)
+
+- add a line at the bottom of your .env like this
+
+    DNS=thisismy.dns.something
+
+- set up your user defined scheduled task so it looks like this (make sure your task scheduler is logging under settings, tick save output results):
+
+    run as root
+
+    run daily, every 5 mins, last run 23:55
+
+    tick send details by email and tick when terminates abnormally (this will email you if it fails over and back)
+
+    command:
+
+    cd <your path to this script>
+    bash ./docker_vpn.sh failover
+
+THATS IT!
+
+&nbsp;
 
 Problems?
 

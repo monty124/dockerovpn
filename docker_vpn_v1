@@ -330,7 +330,35 @@ openvpn(){
 	fi
 }
 
+failover(){
+    clear
+    if [[ $DNS == "<add your dns entry here>" || $DNS == "" ]]; then
+        echo "You puppet! edit .env and set your dns lookup please!"
+        exit
+    fi
+    WHATSMYIP=$(curl -s https://api.ipify.org)
+    WHATWASMYIP=`nslookup $DNS | awk '/^Address: / { print $2 ; exit }'`
+    if [[ $WHATSMYIP == $WHATWASMYIP ]]; then
+        if [[ ! -f "./.failover" ]]; then
+        echo "Nothing to do! my IP is $WHATSMYIP; $DNS says my IP should be $WHATWASMYIP"
+        else
+        echo "Recovering from failover!"
+        echo -e "\033[32m\n  STARTING ALL CONTAINERS  \033[0m"
+        rm -f ./.failover
+        start
+        exit 999
+        fi
+    else
+        echo "$DNS says my IP should be $WHATWASMYIP and my IP is $WHATSMYIP"
+        echo -e "\033[31m\n  STOPPING ALL CONTAINERS  \033[0m" 
+        touch ./.failover
+        stop
+        exit 999
+    fi
 
+}
+
+export TERM=${TERM:-dumb}
 
 case "$1" in
     start)
@@ -360,7 +388,10 @@ case "$1" in
     update)
         update
     ;;	
+    failover)
+        failover
+    ;;
     *)
-        echo $"Usage: $0 {start|stop|status|create|restart|prepare|delete|piaconf|update}"
+        echo $"Usage: $0 {start|stop|status|create|restart|prepare|delete|piaconf|update|failover}"
         exit 1
 esac
