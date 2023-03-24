@@ -49,6 +49,11 @@ updates the core script from git!! (yes really)
 piaconf
 
 stops, pulls conf file from git to update; updates certs prompts to update creds file, starts
+
+failover
+
+does a check of current ip against DNS and stops or starts containers
+
 ```
 
 
