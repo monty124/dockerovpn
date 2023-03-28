@@ -338,6 +338,18 @@ failover(){
     fi
     WHATSMYIP=$(curl -s https://api.ipify.org)
     WHATWASMYIP=`nslookup $DNS | awk '/^Address: / { print $2 ; exit }'`
+    #handle no public IP found
+    if [[ $WHATSMYIP == "" ]]; then
+        echo "WARNING: No Action, unable to determine what my IP is, I'll try again in 30s"
+        #if this is no good chuck a do loop here or something; only trying once
+        sleep 30s
+        WHATSMYIP=$(curl -s https://api.ipify.org)
+        echo "INFO: my IP is: $WHATSMYIP "
+            if [[ $WHATSMYIP == "" ]]; then
+                echo "ERROR: No Action, unable to determine what my IP is, exiting"
+                exit 999
+            fi
+    fi
     if [[ $WHATSMYIP == $WHATWASMYIP ]]; then
         if [[ ! -f "./.failover" ]]; then
         echo "Nothing to do! my IP is $WHATSMYIP; $DNS says my IP should be $WHATWASMYIP"
