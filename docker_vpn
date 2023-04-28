@@ -214,7 +214,7 @@ delete(){
 update(){
 	clear
 	echo -e "\033[32m\n updating THIS script and all dependancies only .env is untouched \033[0m"
-	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v1 -O "docker_vpn.sh"
+	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn -O "docker_vpn.sh"
 	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.transmission -O ".transmission"
 	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.sabnzb -O ".sabnzb"
 	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.nord -O ".nord"
@@ -339,16 +339,25 @@ failover(){
     WHATSMYIP=$(curl -s https://api.ipify.org)
     WHATWASMYIP=`nslookup $DNS | awk '/^Address: / { print $2 ; exit }'`
     #handle no public IP found
-    if [[ -z "$WHATSMYIP" ]]; then
+    if [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "Bad Gateway" ]]; then
         echo "WARNING: No Action, unable to determine what my IP is, I'll try again in 30s"
-        #if this is no good chuck a do loop here or something; only trying once
         sleep 30s
-        WHATSMYIP=$(curl -s https://api.ipify.org)
-        echo "INFO: my IP is: $WHATSMYIP "
-            if [[ -z "$WHATSMYIP" ]]; then
-                echo "ERROR: No Action, unable to determine what my IP is, exiting"
+        COUNTER=1
+        while [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "Bad Gateway" ]]; do
+            if [[ $COUNTER -eq 3 ]]; then
+                #kill before 5 mins and failover
+                #3 == 1mins 30sec
+                echo "Unable to determine IP"
+                echo -e "\033[31m\n  STOPPING ALL CONTAINERS  \033[0m" 
+                touch ./.failover
+                stop
                 exit 999
             fi
+            WHATSMYIP=$(curl -s https://api.ipify.org)
+            echo "INFO: my IP is: $WHATSMYIP "
+            sleep 30s
+            let COUNTER=COUNTER+1
+         done     
     fi
     if [[ $WHATSMYIP == $WHATWASMYIP ]]; then
         if [[ ! -f "./.failover" ]]; then

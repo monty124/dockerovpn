@@ -4,9 +4,6 @@ docker openvpn/sab/transmission shell script for synology
 
 no warranty use at your own risk!
 
-note v2 is no longer maintained, there was stupidity with docker-compose and synology
-I recommend using v1 either in syno or standalone
-
 You will need the .env file and you will need to alter its parameters to suit
 
 ```
@@ -28,7 +25,7 @@ status of containers
 
 create
 
-create containers (v2 based off compose yml file)
+create containers 
 
 restart
 
@@ -75,7 +72,7 @@ change directories to an appropriate location to store the script,
 easiest way is:
 
 ```
-wget https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn_v1 -O "docker_vpn.sh"
+wget https://raw.githubusercontent.com/monty124/dockerovpn/master/docker_vpn -O "docker_vpn.sh"
 
 chmod -R 0755 "docker_vpn.sh"
 
