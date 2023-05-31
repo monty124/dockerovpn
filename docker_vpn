@@ -339,11 +339,11 @@ failover(){
     WHATSMYIP=$(curl -s https://api.ipify.org)
     WHATWASMYIP=`nslookup $DNS | awk '/^Address: / { print $2 ; exit }'`
     #handle no public IP found
-    if [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "Bad Gateway" ]]; then
+    if [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "" || "$WHATSMYIP" == "Bad Gateway" ]]; then
         echo "WARNING: No Action, unable to determine what my IP is, I'll try again in 30s"
         sleep 30s
         COUNTER=1
-        while [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "Bad Gateway" ]]; do
+        while [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "" || "$WHATSMYIP" == "Bad Gateway" ]]; do
             if [[ $COUNTER -eq 3 ]]; then
                 #kill before 5 mins and failover
                 #3 == 1mins 30sec
@@ -361,20 +361,25 @@ failover(){
     fi
     if [[ $WHATSMYIP == $WHATWASMYIP ]]; then
         if [[ ! -f "./.failover" ]]; then
-        echo "Nothing to do! my IP is $WHATSMYIP; $DNS says my IP should be $WHATWASMYIP"
+            echo "Nothing to do! my IP is $WHATSMYIP; $DNS says my IP should be $WHATWASMYIP"
         else
-        echo "Recovering from failover!"
-        echo -e "\033[32m\n  STARTING ALL CONTAINERS  \033[0m"
-        rm -f ./.failover
-        start
-        exit 999
+            echo "Recovering from failover!"
+            echo -e "\033[32m\n  STARTING ALL CONTAINERS  \033[0m"
+            rm -f ./.failover
+            start
+            exit 999
         fi
     else
-        echo "$DNS says my IP should be $WHATWASMYIP and my IP is $WHATSMYIP"
-        echo -e "\033[31m\n  STOPPING ALL CONTAINERS  \033[0m" 
-        touch ./.failover
-        stop
-        exit 999
+        if [[ -f "./.failover" ]]; then 
+            echo "$DNS says my IP should be $WHATWASMYIP and my IP is $WHATSMYIP"
+            echo "no action as failover has occured" 
+            exit 999
+        else
+            echo "$DNS says my IP should be $WHATWASMYIP and my IP is $WHATSMYIP"
+            echo -e "\033[31m\n  STOPPING ALL CONTAINERS  \033[0m" 
+            touch ./.failover
+            stop
+            exit 999
     fi
 
 }
