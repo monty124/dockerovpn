@@ -382,8 +382,7 @@ failover(){
             exit 999
         fi
     fi
-
-}
+    }
 
 export TERM=${TERM:-dumb}
 
