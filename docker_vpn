@@ -380,6 +380,7 @@ failover(){
             touch ./.failover
             stop
             exit 999
+        fi
     fi
 
 }
