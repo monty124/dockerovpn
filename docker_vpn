@@ -336,14 +336,17 @@ failover(){
         echo "You puppet! edit .env and set your dns lookup please!"
         exit
     fi
-    WHATSMYIP=$(curl -s https://api.ipify.org)
+    
+    if ! WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 30 -4); then
+        WHATSMYIP="failed"
+    fi
     WHATWASMYIP=`nslookup $DNS | awk '/^Address: / { print $2 ; exit }'`
     #handle no public IP found
-    if [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "" || "$WHATSMYIP" == "Bad Gateway" ]]; then
+    if [[ -z "$WHATSMYIP" || "$WHATSMYIP" == '' || "$WHATSMYIP" == "Bad Gateway" || "$WHATSMYIP" == "failed" ]]; then
         echo "WARNING: No Action, unable to determine what my IP is, I'll try again in 30s"
         sleep 30s
         COUNTER=1
-        while [[ -z "$WHATSMYIP" || "$WHATSMYIP" == "" || "$WHATSMYIP" == "Bad Gateway" ]]; do
+        while [[ -z "$WHATSMYIP" || "$WHATSMYIP" == '' || "$WHATSMYIP" == "Bad Gateway" ]]; do
             if [[ $COUNTER -eq 3 ]]; then
                 #kill before 5 mins and failover
                 #3 == 1mins 30sec
@@ -353,12 +356,13 @@ failover(){
                 stop
                 exit 999
             fi
-            WHATSMYIP=$(curl -s https://api.ipify.org)
+            WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 30 -4)
             echo "INFO: my IP is: $WHATSMYIP "
             sleep 30s
             let COUNTER=COUNTER+1
          done     
     fi
+    #move on to actual check
     if [[ $WHATSMYIP == $WHATWASMYIP ]]; then
         if [[ ! -f "./.failover" ]]; then
             echo "Nothing to do! my IP is $WHATSMYIP; $DNS says my IP should be $WHATWASMYIP"
