@@ -337,11 +337,15 @@ failover(){
         exit
     fi
     
-    if ! WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 45 -4); then
-        WHATSMYIP="failed"
-    elif ! WHATSMYIP=$(curl -qsf https://ipv4.seeip.org  --max-time 45 -4); then
+    if ! WHATSMYIP=$(curl -qsf https://api.ipify.org); then
         WHATSMYIP="failed"
     fi
+    if [[ "$WHATSMYIP" == "failed" ]]; then
+       if ! WHATSMYIP=$(curl -qsf https://ipv4.seeip.org); then
+            WHATSMYIP="failed"
+        fi
+    fi 
+    
     WHATWASMYIP=`nslookup $DNS | awk '/^Address: / { print $2 ; exit }'`
     #handle no public IP found
     if [[ "$WHATSMYIP" == "failed" ]]; then
@@ -358,11 +362,14 @@ failover(){
                 stop
                 exit 999
             fi
-            if ! WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 45 -4); then
-                WHATSMYIP="failed"
-            elif ! WHATSMYIP=$(curl -qsf https://ipv4.seeip.org  --max-time 45 -4); then
-                WHATSMYIP="failed"
+            if ! WHATSMYIP=$(curl -qsf https://api.ipify.org); then
+                 WHATSMYIP="failed"
             fi
+                if [[ "$WHATSMYIP" == "failed" ]]; then
+                    if ! WHATSMYIP=$(curl -qsf https://ipv4.seeip.org); then
+                            WHATSMYIP="failed"
+                    fi
+                fi 
             echo "INFO: my IP is: $WHATSMYIP "
             sleep 30s
             let COUNTER=COUNTER+1
