@@ -337,7 +337,9 @@ failover(){
         exit
     fi
     
-    if ! WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 30 -4); then
+    if ! WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 45 -4); then
+        WHATSMYIP="failed"
+    elif ! WHATSMYIP=$(curl -qsf https://ipv4.seeip.org  --max-time 45 -4); then
         WHATSMYIP="failed"
     fi
     WHATWASMYIP=`nslookup $DNS | awk '/^Address: / { print $2 ; exit }'`
@@ -356,7 +358,9 @@ failover(){
                 stop
                 exit 999
             fi
-            if ! WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 30 -4); then
+            if ! WHATSMYIP=$(curl -qsf https://api.ipify.org  --max-time 45 -4); then
+                WHATSMYIP="failed"
+            elif ! WHATSMYIP=$(curl -qsf https://ipv4.seeip.org  --max-time 45 -4); then
                 WHATSMYIP="failed"
             fi
             echo "INFO: my IP is: $WHATSMYIP "
