@@ -360,31 +360,42 @@ failover(){
     if [[ "$WHATSMYIP" == "failed" ]]; then
         echo "WARNING: No Action, unable to determine what my IP is, I'll try again in 30s"
         sleep 30s
+        WHATSMYIP=$(curl -qsf https://api.ipify.org)
+        if [[ ! $WHATSMYIP =~ $regex ]]; then
+               echo "$WHATSMYIP is not a valid IP address"
+                WHATSMYIP="failed"
+            fi
         COUNTER=1
-        while [[ ! "$WHATSMYIP" == "failed" ]]; do
-            if [[ $COUNTER -eq 3 ]]; then
+        while [[ ! $WHATSMYIP =~ $regex ]]; do
+            if [[ $COUNTER -eq 9 ]]; then
                 #kill before 5 mins and failover
-                #3 == 1mins 30sec
+                #9 == 1mins 30sec
                 echo "Unable to determine IP"
                 echo -e "\033[31m\n  STOPPING ALL CONTAINERS  \033[0m" 
                 touch ./.failover
                 stop
                 exit 999
             fi
+
             WHATSMYIP=$(curl -qsf https://ipv4.seeip.org)
             if [[ ! $WHATSMYIP =~ $regex ]]; then
                echo "$WHATSMYIP is not a valid IP address"
                 WHATSMYIP="failed"
+            else
+                echo "INFO: my IP is: $WHATSMYIP"
+                break   
             fi
             if [[ "$WHATSMYIP" == "failed" ]]; then
                 WHATSMYIP=$(curl -qsf https://api.ipify.org)
                 if [[ ! $WHATSMYIP =~ $regex ]]; then
                     echo "$WHATSMYIP is not a valid IP address"
                     WHATSMYIP="failed"
+                 else
+                    echo "INFO: my IP is: $WHATSMYIP"
+                    break
                  fi
             fi
-            echo "INFO: my IP is: $WHATSMYIP "
-            sleep 30s
+            sleep 10s
             let COUNTER=COUNTER+1
          done     
     fi
