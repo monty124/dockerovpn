@@ -1,15 +1,13 @@
 #!/bin/bash
-#container name
-containername=jdownloader2
-#container image
-imagename=jlesage/jdownloader-2
 #portmapping on a single line e.g. -p 6881:6881 -p 6881:6881/udp -p 8181:8181 
-portmapping="-p 5801:5800 -p 3129:3129"
+qtportmapping="-p 8181:8181"
 
 #external container path, internal is in .env
-download_path="/home/docker/volume1/Downloads"
+qtdownload_path="/volume1/Downloads"
 #external config path
-config_path="/home/docker/volume2/docker/jdownloader2"
+qtconfig_path="/volume2/docker/qbittorrent"
+#variable for webui used below COULD be hard coded, needs to map to the portmapping above for this container
+webuiport=8181
 
 #function needs to be the container name do not change the code name=$1 this needs to be included
 #you need to prepare your own paths for this container!! make sure permissions are correct!
@@ -17,17 +15,17 @@ config_path="/home/docker/volume2/docker/jdownloader2"
 #most of below will be transportable to other container types! 
 #--net=container:${CONTAINERS[0]} \
 
-jdownloader2(){
+qbittorrent(){
 	name=$1
     docker create \
     --name=$name \
     --restart always \
-	-e KEEP_APP_RUNNING=1 \
-    -e GROUP_ID=$PGID \
-    -e USER_ID=$PUID \
+	-e WEBUI_PORT=$webuiport \
+    -e PGID=$PGID \
+    -e PUID=$PUID \
     -e TZ=$TIMEZONE \
-	-v $download_path:/output \
-	-v $config_path:/config \
+	-v $qtdownload_path:/$container_downloads \
+	-v $qtconfig_path:/config \
     --net=container:openvpn \
     $imagename
 }

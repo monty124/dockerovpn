@@ -37,10 +37,16 @@ source .transmission
 source .sabnzb
 
 
+
 if [ $enable_trans == "true" ]; then
 	CONTAINERS+=("transmission")
 	IMAGES+=("linuxserver/transmission")
 	PORTS="${PORTS} -p 9091:9091"
+elif [ $enable_qbt == "true" ]; then
+	source .qbittorrent
+    CONTAINERS+=("qbittorrent")
+	IMAGES+=("linuxserver/qbittorrent")
+	PORTS="${PORTS} ${qtportmapping}"
 fi
 
 if [ $enable_sab == "true" ]; then
@@ -55,6 +61,7 @@ if [ $othercontainer == "true" ]; then
 	IMAGES+=("${imagename}")
 	PORTS="${PORTS} ${portmapping}"
 fi
+
 
 stop(){
     clear
@@ -218,6 +225,7 @@ update(){
 	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.transmission -O ".transmission"
 	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.sabnzb -O ".sabnzb"
 	wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.nord -O ".nord"
+    wget -q https://raw.githubusercontent.com/monty124/dockerovpn/master/.qbittorrent -O ".qbittorrent"
 	source .env
 	chown -R $PUID:$PGID "docker_vpn.sh"
 	chmod -R 0755 "docker_vpn.sh"
@@ -227,7 +235,9 @@ update(){
 	chmod -R 0755 ".sabnzb"
 	chown -R $PUID:$PGID ".nord"
 	chmod -R 0755 ".nord"
-	chmod +x "docker_vpn.sh"
+	chown -R $PUID:$PGID ".qbittorrent"
+    chmod -R 0755 ".qbittorrent"
+    chmod +x "docker_vpn.sh"
 	echo -e "\033[32m\n script updated \033[0m"
 	exit
 }

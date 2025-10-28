@@ -251,6 +251,17 @@ THATS IT!
 
 &nbsp;
 
+# qbittorrent
+
+added qbit torrent as a perm option
+
+new .env variable
+
+enable_qbt=false/true
+
+can only have transmission OR qbt! one or the other
+
+
 # Problems?
 
 ## lsmod issues? try
