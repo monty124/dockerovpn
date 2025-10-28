@@ -27,5 +27,5 @@ qbittorrent(){
 	-v $qtdownload_path:/$container_downloads \
 	-v $qtconfig_path:/config \
     --net=container:openvpn \
-    $imagename
+    linuxserver/qbittorrent
 }
