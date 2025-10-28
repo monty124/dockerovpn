@@ -35,7 +35,7 @@ fi
 source .env
 source .transmission
 source .sabnzb
-
+source .qbittorrent
 
 
 if [ $enable_trans == "true" ]; then
@@ -43,7 +43,6 @@ if [ $enable_trans == "true" ]; then
 	IMAGES+=("linuxserver/transmission")
 	PORTS="${PORTS} -p 9091:9091"
 elif [ $enable_qbt == "true" ]; then
-	source .qbittorrent
     CONTAINERS+=("qbittorrent")
 	IMAGES+=("linuxserver/qbittorrent")
 	PORTS="${PORTS} ${qtportmapping}"
